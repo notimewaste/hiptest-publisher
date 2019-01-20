@@ -603,6 +603,113 @@ describe 'Render as Java' do
       let(:framework) { 'JUnit' }
       let(:package) { 'com.example' }
     end
+
+    it_behaves_like 'a renderer handling libraries' do
+      let(:language) { 'java' }
+      let(:framework) { 'JUnit' }
+      let(:package) { 'com.example' }
+
+      let(:libraries_rendered) {
+        [
+          'package com.example;',
+          '',
+          'public class ActionwordLibrary {',
+          '    public DefaultLibrary getDefaultLibrary() {',
+          '        return new DefaultLibrary();',
+          '    }',
+          '',
+          '    public WebLibrary getWebLibrary() {',
+          '        return new WebLibrary();',
+          '    }',
+          '}'
+        ].join("\n")
+      }
+
+      let(:first_lib_rendered) {[
+        'package com.example;',
+        '',
+        'public class DefaultLibrary extends ActionwordLibrary {',
+        '    public void myFirstActionWord() {',
+        '        // Tags: priority:high wip',
+        '    }',
+        '}'
+      ].join("\n")}
+
+      let(:second_lib_rendered) {[
+        'package com.example;',
+        '',
+        'public class WebLibrary extends ActionwordLibrary {',
+        '    public void mySecondActionWord() {',
+        '        // Tags: priority:low done',
+        '    }',
+        '}'
+      ].join("\n")}
+
+      let(:actionwords_rendered) {[
+        'package com.example;',
+        '',
+        'public class Actionwords extends ActionwordLibrary {',
+        '',
+        '    public void myProjectActionWord() {',
+        '',
+        '    }',
+        '',
+        '    public void myHighLevelProjectActionword() {',
+        '        myProjectActionWord();',
+        '    }',
+        '',
+        '    public void myHighLevelActionword() {',
+        '        getDefaultLibrary().myFirstActionWord();',
+        '    }',
+        '}'
+      ].join("\n")}
+
+      let(:scenarios_rendered) {[
+        'package com.example;',
+        '',
+        'import junit.framework.TestCase;',
+        '',
+        'public class ProjectTest extends TestCase {',
+        '',
+        '    public Actionwords actionwords = new Actionwords();',
+        '',
+        '    public void testMyCallingScenario() {',
+        '        actionwords.getDefaultLibrary().myFirstActionWord();',
+        '        actionwords.getWebLibrary().mySecondActionWord();',
+        '        actionwords.myProjectActionWord();',
+        '    }',
+        '}'
+      ].join("\n")}
+
+      let(:scenario_using_default_parameter_rendered) {[
+        'package com.example;',
+        '',
+        'import junit.framework.TestCase;',
+        '',
+        'public class ProjectTest extends TestCase {',
+        '',
+        '    public Actionwords actionwords = new Actionwords();',
+        '',
+        '    public void testMyCallingScenario() {',
+        '        actionwords.getDefaultLibrary().myActionwordWithDefaultValue("My default value");',
+        '    }',
+        '}',
+      ].join("\n")}
+
+      let(:library_with_typed_parameters_rendered) {[
+        'package com.example;',
+        '',
+        'public class DefaultLibrary extends ActionwordLibrary {',
+        '    public void myFirstActionWord() {',
+        '',
+        '    }',
+        '',
+        '    public void myTypedActionWord(int someParam) {',
+        '',
+        '    }',
+        '}',
+      ].join("\n")}
+    end
   end
 
   context 'TestNG' do

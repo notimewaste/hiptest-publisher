@@ -188,6 +188,8 @@ describe 'Render as Groovy' do
     #   call 'first action word'
     # end
     @actionwords_rendered = [
+      "package com.example",
+      "",
       "class Actionwords {",
       "  def firstActionWord() {",
       "  }",
@@ -217,6 +219,8 @@ describe 'Render as Groovy' do
     #   call 'aw with string param'(x = 'toto')
     #   call 'aw with template param'(x = "toto")
     @actionwords_with_params_rendered = [
+      "package com.example",
+      "",
       "class Actionwords {",
       "  def awWithIntParam(x) {",
       "  }",
@@ -292,6 +296,8 @@ describe 'Render as Groovy' do
     # Same than previous scenario, except that is is rendered
     # so it can be used in a single file (using the --split-scenarios option)
     @full_scenario_rendered_for_single_file = [
+      'package com.example',
+      '',
       'import spock.lang.*',
       '',
       'class CompareToPiSpec extends Specification {',
@@ -375,6 +381,8 @@ describe 'Render as Groovy' do
 
     # Same than "scenario_with_datatable_rendered" but rendered with the option --split-scenarios
     @scenario_with_datatable_rendered_in_single_file = [
+      'package com.example',
+      '',
       'import spock.lang.*',
       '',
       'class CheckLoginSpec extends Specification {',
@@ -424,6 +432,8 @@ describe 'Render as Groovy' do
     ].join("\n")
 
     @tests_rendered = [
+      'package com.example',
+      '',
       'import spock.lang.*',
       '',
       'class ProjectSpec extends Specification {',
@@ -477,6 +487,8 @@ describe 'Render as Groovy' do
     ].join("\n")
 
     @first_test_rendered_for_single_file = [
+      'package com.example',
+      '',
       'import spock.lang.*',
       '',
       'class LoginSpec extends Specification {',
@@ -518,6 +530,8 @@ describe 'Render as Groovy' do
     ].join("\n")
 
     @scenarios_rendered = [
+      'package com.example',
+      '',
       'import spock.lang.*',
       '',
       'class ProjectSpec extends Specification {',
@@ -534,6 +548,8 @@ describe 'Render as Groovy' do
     ].join("\n")
 
     @root_folder_rendered = [
+      'package com.example',
+      '',
       'import spock.lang.*',
       '',
       'class MyRootFolderSpec extends Specification {',
@@ -549,6 +565,8 @@ describe 'Render as Groovy' do
     ].join("\n")
 
     @grand_child_folder_rendered = [
+      'package com.example',
+      '',
       'import spock.lang.*',
       '',
       'class AGrandchildFolderSpec extends Specification {',
@@ -557,6 +575,8 @@ describe 'Render as Groovy' do
     ].join("\n")
 
     @grand_child_scenario_rendered_for_single_file = [
+      'package com.example',
+      '',
       'import spock.lang.*',
       '',
       'class OneGrandchildScenarioSpec extends Specification {',
@@ -568,6 +588,8 @@ describe 'Render as Groovy' do
     ].join("\n")
 
     @second_grand_child_folder_rendered = [
+      'package com.example',
+      '',
       'import spock.lang.*',
       '',
       'class ASecondGrandchildFolderSpec extends Specification {',
@@ -623,7 +645,7 @@ describe 'Render as Groovy' do
         ])
       )
 
-      Hiptest::Nodes::ParentAdder.add(@folders_project)
+      Hiptest::NodeModifiers::ParentAdder.add(@folders_project)
       render_context = context_for(
         node: container,
         # only to select the right config group: we render [actionwords], [tests] and others differently
@@ -632,6 +654,8 @@ describe 'Render as Groovy' do
         with_folders: true)
 
       expect(container.render(render_context)).to eq([
+        'package com.example',
+        '',
         'import spock.lang.*',
         '',
         'class MultipleDatatablesSpec extends Specification {',
@@ -662,13 +686,128 @@ describe 'Render as Groovy' do
         '}',
       ].join("\n"))
     end
-  end
 
-
-  context 'Groovy/Spock' do
-    it_behaves_like "a renderer" do
+    it_behaves_like 'a renderer handling libraries' do
       let(:language) {'groovy'}
       let(:framework) {'spock'}
+
+      let(:libraries_rendered) {
+        [
+          'package com.example',
+          '',
+          'class ActionwordLibrary {',
+          '  DefaultLibrary getDefaultLibrary() {',
+          '    return DefaultLibrary.instance',
+          '  }',
+          '',
+          '  WebLibrary getWebLibrary() {',
+          '    return WebLibrary.instance',
+          '  }',
+          '}'
+        ].join("\n")
+      }
+
+      let(:actionwords_rendered) {
+        [
+          'package com.example',
+          '',
+          'class Actionwords extends ActionwordLibrary{',
+          '  def myProjectActionWord() {',
+          '  }',
+          '',
+          '  def myHighLevelProjectActionword() {',
+          '    myProjectActionWord()',
+          '  }',
+          '',
+          '  def myHighLevelActionword() {',
+          '    getDefaultLibrary().myFirstActionWord()',
+          '  }',
+          '}'
+        ].join("\n")
+      }
+
+      let(:first_lib_rendered) {[
+        'package com.example',
+        '',
+        '@Singleton',
+        'class DefaultLibrary {',
+        '  def myFirstActionWord() {',
+        '    // Tags: priority:high wip',
+        '  }',
+        '}'
+      ].join("\n")}
+
+      let(:second_lib_rendered) {[
+        'package com.example',
+        '',
+        '@Singleton',
+        'class WebLibrary {',
+        '  def mySecondActionWord() {',
+        '    // Tags: priority:low done',
+        '  }',
+        '}'
+      ].join("\n")}
+    end
+
+    context 'with library actionwords' do
+      let(:aw_uid) { '12345678-1234-1234-1234-123456789012'}
+      let(:aw) {
+        make_actionword('some trigger', uid: aw_uid)
+      }
+
+      it 'handles correctly shared actionwords in tests' do
+        default_library = make_library('default', [aw])
+        container = make_folder("A folder", parent: @root_folder)
+
+        sc1 = make_scenario(
+          "When-Then Scenario",
+          folder: container,
+          body: [
+            make_call("go to page", annotation: "given"),
+            make_uidcall(aw_uid, annotation: "when"),
+            make_call('the page contains something', annotation: "then")
+          ]
+        )
+
+        project = make_project(
+          'A project',
+          folders: [@root_folder, container],
+          scenarios: [sc1],
+          libraries: Hiptest::Nodes::Libraries.new([default_library])
+        )
+
+        Hiptest::NodeModifiers::ParentAdder.add(@folders_project)
+        Hiptest::NodeModifiers::UidCallReferencerAdder.add(project)
+        render_context = context_for(
+          node: container,
+          # only to select the right config group: we render [actionwords], [tests] and others differently
+          language: 'groovy',
+          framework: 'spock',
+          with_folders: true
+        )
+
+        expect(container.render(render_context)).to eq([
+          'package com.example',
+          '',
+          'import spock.lang.*',
+          '',
+          'class AFolderSpec extends Specification {',
+          '  def actionwords = Actionwords.newInstance()',
+          '',
+          '',
+          '',
+          '  def "When-Then Scenario"() {',
+          '',
+          '    given:',
+          '    actionwords.goToPage()',
+          '    when:',
+          '    actionwords.getDefaultLibrary().someTrigger()',
+          '    then:',
+          '    actionwords.thePageContainsSomething()',
+          '  }',
+          '}',
+      ].join("\n"))
+      end
     end
 
     it 'handles correctly a unroll-spec for spock' do
@@ -706,7 +845,7 @@ describe 'Render as Groovy' do
         datatable: datatable
       )
 
-      Hiptest::Nodes::ParentAdder.add(@folders_project)
+      Hiptest::NodeModifiers::ParentAdder.add(@folders_project)
       render_context = context_for(
           node: container,
           # only to select the right config group: we render [actionwords], [tests] and others differently
@@ -715,45 +854,71 @@ describe 'Render as Groovy' do
           with_folders: true)
 
       expect(container.render(render_context)).to eq([
-         'import spock.lang.*',
-         '',
-         'class SpockUnrollVariantsSpec extends Specification {',
-         '  def actionwords = Actionwords.newInstance()',
-         '',
-         '',
-         '',
-         '',
-         '  @Unroll("When-Then Scenario #hiptestUid")',
-         '  def "When-Then Scenario"() {',
-         '',
-         '    given:',
-         '    actionwords.goToPage()',
-         '    when:',
-         '    actionwords.someTrigger()',
-         '    then:',
-         '    actionwords.thePageContainsSomething()',
-         '',
-         '    where:',
-         '    x | y | hiptestUid',
-         '    "1" | "2" | "uid:"',
-         '    "3" | "4" | "uid:"',
-         '  }',
-         '',
-         '  @Unroll("Expect Scenario #hiptestUid")',
-         '  def "Expect Scenario"() {',
-         '',
-         '    given:',
-         '    actionwords.goToPage()',
-         '    expect:',
-         '    actionwords.thePageContainsSomething()',
-         '',
-         '    where:',
-         '    x | y | hiptestUid',
-         '    "1" | "2" | "uid:"',
-         '    "3" | "4" | "uid:"',
-         '  }',
-         '}',
-     ].join("\n"))
+        'package com.example',
+        '',
+        'import spock.lang.*',
+        '',
+        'class SpockUnrollVariantsSpec extends Specification {',
+        '  def actionwords = Actionwords.newInstance()',
+        '',
+        '',
+        '',
+        '',
+        '  @Unroll("When-Then Scenario #hiptestUid")',
+        '  def "When-Then Scenario"() {',
+        '',
+        '    given:',
+        '    actionwords.goToPage()',
+        '    when:',
+        '    actionwords.someTrigger()',
+        '    then:',
+        '    actionwords.thePageContainsSomething()',
+        '',
+        '    where:',
+        '    x | y | hiptestUid',
+        '    "1" | "2" | "uid:"',
+        '    "3" | "4" | "uid:"',
+        '  }',
+        '',
+        '  @Unroll("Expect Scenario #hiptestUid")',
+        '  def "Expect Scenario"() {',
+        '',
+        '    given:',
+        '    actionwords.goToPage()',
+        '    expect:',
+        '    actionwords.thePageContainsSomething()',
+        '',
+        '    where:',
+        '    x | y | hiptestUid',
+        '    "1" | "2" | "uid:"',
+        '    "3" | "4" | "uid:"',
+        '  }',
+        '}',
+      ].join("\n"))
+    end
+
+    it 'Actionwords must extend ActionwordLibrary if there are libraries' do
+      aws = Hiptest::Nodes::Actionwords.new([make_actionword('aw')])
+      libraries = Hiptest::Nodes::Libraries.new([make_library('default', [])])
+      project = Hiptest::Nodes::Project.new(
+        'project',
+        '',
+        Hiptest::Nodes::TestPlan.new,
+        Hiptest::Nodes::Scenarios.new,
+        aws,
+        Hiptest::Nodes::Tests.new,
+        libraries
+      )
+
+      Hiptest::NodeModifiers.add_all(project)
+
+      context = context_for(
+        only: 'actionwords',
+        language: 'groovy',
+        framework: 'spock'
+      )
+
+      expect(aws.render(context)).to include('class Actionwords extends ActionwordLibrary')
     end
   end
 end

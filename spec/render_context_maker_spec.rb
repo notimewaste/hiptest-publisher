@@ -106,7 +106,8 @@ describe Hiptest::RenderContextMaker do
         :relative_package,
         :project_name,
         :has_datasets?,
-        :has_annotations?
+        :has_annotations?,
+        :uniq_name
       ])
 
       expect(subject.walk_scenario(node)[:project_name]).to eq('A project')
@@ -168,6 +169,31 @@ describe Hiptest::RenderContextMaker do
     end
   end
 
+  context 'walk_actionwords' do
+    let(:node) {
+      Hiptest::Nodes::Actionwords.new
+    }
+
+    let(:project) {Hiptest::Nodes::Project.new('My project')}
+
+    context 'uses_library?' do
+      it 'returns false if there is no project for the node' do
+        expect(subject.walk_actionwords(node)[:uses_library?]).to be false
+      end
+
+      it 'returns false when the project does not have any library' do
+        node.parent = project
+        expect(subject.walk_actionwords(node)[:uses_library?]).to be false
+      end
+
+      it 'returns true otherwise' do
+        project.children[:libraries].children[:libraries] << Hiptest::Nodes::Library.new('default')
+        node.parent = project
+        expect(subject.walk_actionwords(node)[:uses_library?]).to be true
+      end
+    end
+  end
+
   context 'walk_call' do
     let(:node) {node = Hiptest::Nodes::Call.new('my_action_word')}
 
@@ -219,6 +245,24 @@ describe Hiptest::RenderContextMaker do
       node.parent.children[:datatable].children[:datasets] << 'Anything'
 
       expect(subject.walk_call(node)[:in_datatabled_scenario?]).to be true
+    end
+  end
+
+  context 'walk_uidcall' do
+    let(:node) { Hiptest::Nodes::UIDCall.new('ff85fe99-55c0-48f5-9de3-b4ffd6ea9636') }
+
+    it 'tells if there is an annotation' do
+      expect(subject.walk_uidcall(node)[:has_annotation?]).to be false
+
+      node.children[:annotation] = 'Given'
+      expect(subject.walk_uidcall(node)[:has_annotation?]).to be true
+    end
+
+    it 'tells if there is a library' do
+      expect(subject.walk_uidcall(node)[:has_library?]).to be false
+
+      node.children[:library_name] = 'default library'
+      expect(subject.walk_uidcall(node)[:has_library?]).to be true
     end
   end
 

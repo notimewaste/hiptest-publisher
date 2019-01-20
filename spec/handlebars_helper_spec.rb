@@ -530,6 +530,65 @@ describe Hiptest::HandlebarsHelper do
     end
   end
 
+  context 'hh_description_with_annotations' do
+    it 'Surround a line with double quotes if it starts with an annotation steps' do
+      commenter = [
+        "First line",
+        "Given line",
+        "When line",
+        "    Then line",
+        "And line",
+        "But line",
+        "* line",
+        "    * line",
+        "Last line"
+      ].join("\n")
+      expect(instance.hh_description_with_annotations(nil, commenter, nil)).to eq([
+        "First line",
+        "\"Given line\"",
+        "\"When line\"",
+        "\"    Then line\"",
+        "\"And line\"",
+        "\"But line\"",
+        "\"* line\"",
+        "\"    * line\"",
+        "Last line"
+      ].join("\n"))
+    end
+
+    it 'Surround a line with double quotes if it starts with an #' do
+      commenter = [
+        "First line",
+        "# an other line",
+        "",
+        "# last line"
+      ].join("\n")
+      expect(instance.hh_description_with_annotations(nil, commenter, nil)).to eq([
+        "First line",
+        "\"# an other line\"",
+        "",
+        "\"# last line\""
+      ].join("\n"))
+    end
+
+    it 'Surround a line with double quotes if it starts with an annotation steps (case insensitive)' do
+      commenter = [
+        "given line",
+        "when line",
+        "    THEN line",
+        "aND line",
+        "but line"
+      ].join("\n")
+      expect(instance.hh_description_with_annotations(nil, commenter, nil)).to eq([
+        "\"given line\"",
+        "\"when line\"",
+        "\"    THEN line\"",
+        "\"aND line\"",
+        "\"but line\""
+      ].join("\n"))
+    end
+  end
+
   context 'hh_curly' do
     it 'adds curly braces around a block' do
       expect(instance.hh_curly(nil, block)).to eq([
@@ -601,6 +660,37 @@ describe Hiptest::HandlebarsHelper do
       template = '{{#replace "plic" "ploc"}}{{txt}}{{/replace}}'
 
       expect(evaluate(template, {txt: 'When I plic'})).to eq("When I ploc")
+    end
+  end
+
+  context 'hh_if_includes' do
+    it 'returns the true block if array contains the element' do
+      template = '{{#if_includes array element}}true block{{else}}false block{{/if_includes}}'
+
+      expect(evaluate(template, array: %w[a b c], element: 'a')).to eq('true block')
+    end
+
+    it 'returns the false block if array does not contain the element' do
+      template = '{{#if_includes array element}}true block{{else}}false block{{/if_includes}}'
+
+      expect(evaluate(template, array: %w[a b c], element: 'd')).to eq('false block')
+    end
+
+    it 'returns the false block if array is empty' do
+      template = '{{#if_includes array element}}true block{{else}}false block{{/if_includes}}'
+
+      expect(evaluate(template, array: %w[], element: 'a')).to eq('false block')
+    end
+
+    it 'returns the false block if array is nil' do
+      template = '{{#if_includes array element}}true block{{else}}false block{{/if_includes}}'
+
+      expect(evaluate(template, array: nil, element: 'a')).to eq('false block')
+    end
+
+    it 'does nothing if there is no false block and element not in array' do
+      template = '{{#if_includes array element}}true block{{/if_includes}}'
+      expect(evaluate(template, array: %w[b c], element: 'a')).to eq('')
     end
   end
 end

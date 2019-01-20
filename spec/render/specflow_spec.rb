@@ -10,8 +10,8 @@ describe 'Specflow rendering' do
         '',
         '@myTag @myTag_some_value',
         'Scenario: Create purple',
-        '  # You can have a description',
-        '  # on multiple lines',
+        '  You can have a description',
+        '  on multiple lines',
         '  Given the color "blue"',
         '  And the color "red"',
         '  When you mix colors',
@@ -24,11 +24,11 @@ describe 'Specflow rendering' do
       [
         '@myTag @myTag_some_value @JIRA_CW6',
         'Feature: Cool colors',
-        '    # Cool colors calm and relax.',
-        '    # They are the hues from blue green through blue violet, most grays included.',
+        '    Cool colors calm and relax.',
+        '    They are the hues from blue green through blue violet, most grays included.',
         '',
         '  Scenario: Create green',
-        '    # You can create green by mixing other colors',
+        '    You can create green by mixing other colors',
         '    Given the color "blue"',
         '    And the color "yellow"',
         '    When you mix colors',
@@ -36,8 +36,8 @@ describe 'Specflow rendering' do
         '    But you cannot play croquet',
         '',
         '  Scenario: Create purple',
-        '    # You can have a description',
-        '    # on multiple lines',
+        '    You can have a description',
+        '    on multiple lines',
         '    Given the color "blue"',
         '    And the color "red"',
         '    When you mix colors',
@@ -58,6 +58,19 @@ describe 'Specflow rendering' do
         ''
       ].join("\n")
     }
+
+  let(:feature_with_no_parent_folder_tags_rendered) {
+    [
+      '@key_value',
+      'Feature: Sub-sub-regression folder',
+      '',
+      '',
+      '  @my_own',
+      '  Scenario: Inherit tags',
+      '    Given the color "<color_definition>"',
+      ''
+    ].join("\n")
+  }
 
     let(:rendered_actionwords) {
       [
@@ -117,6 +130,16 @@ describe 'Specflow rendering' do
         '        }',
         '    }',
         '}'
+      ].join("\n")
+    }
+
+    let(:actionword_without_quotes_in_regexp_rendered) {
+      [
+        '[Given("^the color (.*)$"), When("^the color (.*)$"), Then("^the color (.*)$")]',
+        'public void TheColorColor(string color) {',
+        '    Actionwords.TheColorColor(color);',
+        '}',
+        ''
       ].join("\n")
     }
 

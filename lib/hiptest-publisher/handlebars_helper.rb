@@ -222,6 +222,14 @@ module Hiptest
       end.join("\n")
     end
 
+    def hh_description_with_annotations (context, commenter, block)
+      value = compute_block_value(context, commenter, block)
+      value = value.split("\n").map do |line|
+        line.strip.downcase.start_with?('given', 'when', 'then', 'and', 'but', '*', '#') ? "\"#{line}\"" : line
+      end.join("\n")
+      value
+    end
+
     def hh_curly (context, block)
       "{#{block.fn(context)}}"
     end
@@ -273,6 +281,16 @@ module Hiptest
       require 'pry'
       binding.pry
       ""
+    end
+
+    def hh_if_includes(context, array, element, block_true, block_false = nil)
+      if array.kind_of?(Array) && array.include?(element)
+        block_true.fn(context)
+      elsif block_false
+        block_false.fn(context)
+      else
+        ''
+      end
     end
   end
 end

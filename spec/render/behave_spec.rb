@@ -69,6 +69,15 @@ describe 'Behave rendering' do
       ].join("\n")
     }
 
+    let(:actionword_without_quotes_in_regexp_rendered) {
+      [
+        "",
+        "@given(r'the color (.*)')",
+        "def impl(context, color):",
+        "    context.actionwords.the_color_color(color)"
+      ].join("\n")
+    }
+
     let(:rendered_free_texted_actionword) {[
       'def the_following_users_are_available(self, free_text = \'\'):',
       '    pass',
@@ -94,7 +103,7 @@ describe 'Behave rendering' do
       ],
       actionwords: [aw]
     )
-    Hiptest::GherkinAdder.add(project)
+    Hiptest::NodeModifiers.add_all(project)
 
     options =  context_for(only: "step_definitions", language: 'behave')
     expect(aw.render(options)).to eq([
@@ -116,7 +125,7 @@ describe 'Behave rendering' do
       ],
       actionwords: [aw]
     )
-    Hiptest::GherkinAdder.add(project)
+    Hiptest::NodeModifiers::GherkinAdder.add(project)
 
     options =  context_for(only: "step_definitions", language: 'behave')
     expect(aw.render(options)).to eq([
@@ -147,8 +156,8 @@ describe 'Behave rendering' do
       ]
     )
 
-    Hiptest::Nodes::ParentAdder.add(project)
-    Hiptest::GherkinAdder.add(project)
+    Hiptest::NodeModifiers::ParentAdder.add(project)
+    Hiptest::NodeModifiers::GherkinAdder.add(project)
 
     options = context_for(only: "step_definitions", language: 'behave')
 

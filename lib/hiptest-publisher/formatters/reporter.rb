@@ -1,5 +1,3 @@
-
-
 class Reporter
   def initialize(listeners = nil)
     @listeners = listeners || []
@@ -30,6 +28,18 @@ class Reporter
     raise
   ensure
     notify(:show_status_message, message, status)
+  end
+
+  def success_message(message)
+    notify(:show_status_message, message, :success)
+  end
+
+  def warning_message(message)
+    notify(:show_status_message, message, :warning)
+  end
+
+  def failure_message(message)
+    notify(:show_status_message, message, :failure)
   end
 
   def notify(message, *args)

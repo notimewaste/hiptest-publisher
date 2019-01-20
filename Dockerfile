@@ -1,4 +1,4 @@
-FROM ruby:2.5.1-alpine
+FROM ruby:2.5.3-alpine
 
 RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
@@ -20,7 +20,7 @@ RUN set -ex \
   && git init . \
   && git add . \
   && git commit -m 'fake commit' \
-  && rake install \
+  && bundle exec rake install \
   && rm -rf /usr/local/bundle/cache \
     /root/.bundle \
     /root/.gem \

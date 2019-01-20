@@ -11,27 +11,27 @@ Hiptest Publisher
 Installing
 ----------
 
-### Docker Installation
+### Using docker image
 
-You can build the docker image or use an already built docker image for hiptest/hiptest-publisher.
+A docker image of hiptest-publisher is built automatically and is available on
+[Docker Hub](https://hub.docker.com/r/hiptest/hiptest-publisher/)
 
-You can use the docker image just like the command line installation. The image includes a script that runs
-docker with the necessary options. Copy the script from the image using these commands:
-
-```shell
-cid=$(docker create hiptest/hiptest-publisher) &&
-docker cp $cid:/usr/src/app/bin/hiptest-publisher-docker hiptest-publisher &&
-docker rm $cid > /dev/null
+To call hiptest-publisher using this image, run this command:
+```
+docker run -it --rm -u $UID -v $(pwd):/app hiptest/hiptest-publisher <arguments>
 ```
 
-Now you can use `hiptest-publisher` in order to run the program.
+A wrapper script is provided in
+[`bin/hiptest-publisher-docker`](https://raw.githubusercontent.com/hiptest/hiptest-publisher/master/bin/hiptest-publisher-docker).
+To use it:
+1. copy `bin/hiptest-publisher-docker` to a location available in your `PATH`
+   like `~/bin` or `/usr/local/bin`
+2. rename it as `hiptest-publisher`
+3. make it executable with `chmod +x hiptest-publisher`
 
-Suggestions for installation of the hiptest-publisher script:
+You will then be able to use hiptest-publisher as if it was locally installed.
 
-* Copy hiptest-publisher to a path directory (e.g. ~/bin or /usr/local/bin).
-* Create an alias for hiptest-publisher: `alias 'hiptest-publisher=/path/to/hiptest-publisher'`
-
-### Local Installation
+### Using local installation
 
 You need to have [Ruby installed on your machine](https://www.ruby-lang.org/en/installation/). You can then install it using gem:
 
@@ -119,6 +119,7 @@ Specific options:
                                      Output signatures of action words for which signature changed (default: false)
         --show-actionwords-definition-changed
                                      Output action words for which definition changed (default: false)
+        --library-name=LIBRARY_NAME  Use in conjunction with show-actionwords-*: show the diff for the specified library
         --with-folders               Use folders hierarchy to export files in respective directories (default: false)
         --empty-folders              Export empty folders (default: false)
         --split-scenarios            Export each scenario in a single file (except for Gherkin based languages) (default: false)
@@ -130,6 +131,9 @@ Specific options:
         --push-format=tap            Format of the test results (cucumber-json, junit, nunit, robot, tap) (default: tap)
         --sort=[id,order,alpha]      Sorting of tests in output: id will sort them by age, order will keep the same order than in hiptest (only with --with-folders option, will fallback to id otherwise), alpha will sort them by name (default: order)
         --[no-]uids                  Export UIDs (note: can be disabled only for Gherkin-based exports, may cause issue when pushing results back) (default: true)
+        --[no-]parent-folders-tags   Export tags from parent folder (note: if set to false, those tags are never rendered. Only available for Gherkin base exports) (default: true)
+        --parameter-delimiter        Parameter delimiter (for Gherkin based export only) (default: ")
+        --with-dataset-names         Export dataset name when creating feature files (note: available only for Gherkin-based exports) (default: false)
         --keep-filenames             Keep the same name as in Hiptest for the test files (note: may cause encoding issues) (default: false)
         --keep-foldernames           Keep the same name as in Hiptest for the folders (note: may cause encoding issues) (default: false)
         --filter-on-scenario-ids=IDS Filter on scenario ids (use commas to separate ids when fetching multiple scenarios)
@@ -171,6 +175,17 @@ package = 'com.youcompany'
 ```
 
 Note that options from command line arguments override options from config file.
+
+### Using hiptest-publisher behind a http proxy
+
+To use hiptest-publisher behind a http proxy, set an environment variable named http_proxy
+```
+http_proxy=http://<proxy_host>:<proxy_port>
+```
+If username and password are required:
+```
+http_proxy=http://<username>:<password>@<proxy_host>:<proxy_port>
+```
 
 Posting results to Hiptest
 --------------------------

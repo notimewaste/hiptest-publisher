@@ -2,19 +2,14 @@ require 'colorize'
 require 'json'
 require 'yaml'
 
-require 'hiptest-publisher/call_arguments_adder'
+require 'hiptest-publisher/node_modifiers/add_all'
 require 'hiptest-publisher/cli_options_checker'
 require 'hiptest-publisher/client'
-require 'hiptest-publisher/datatable_fixer'
-require 'hiptest-publisher/diff_displayer'
+require 'hiptest-publisher/formatters/diff_displayer'
 require 'hiptest-publisher/formatters/reporter'
 require 'hiptest-publisher/file_writer'
-require 'hiptest-publisher/gherkin_adder'
 require 'hiptest-publisher/handlebars_helper'
-require 'hiptest-publisher/items_orderer'
 require 'hiptest-publisher/options_parser'
-require 'hiptest-publisher/parameter_type_adder'
-require 'hiptest-publisher/parent_adder'
 require 'hiptest-publisher/renderer'
 require 'hiptest-publisher/signature_differ'
 require 'hiptest-publisher/signature_exporter'
@@ -126,7 +121,7 @@ module Hiptest
         answer = $stdin.gets.chomp.downcase.strip
         return ['y', 'yes'].include?(answer)
       else
-        reporter.notify(:show_status_message, "File #{path} already exists, skipping. Use --force to overwrite it.", :warning)
+        reporter.warning_message("File #{path} already exists, skipping. Use --force to overwrite it.")
         return false
       end
     end
@@ -143,7 +138,8 @@ module Hiptest
 
     def export_files
       @language_config.language_group_configs.each do |language_group_config|
-        ask_overwrite = language_group_config[:group_name] == 'actionwords'
+        next if ['library', 'libraries'].include?(language_group_config[:group_name]) && !@project.has_libraries?
+        ask_overwrite = ['actionwords', 'libraries'].include?(language_group_config[:group_name])
 
         language_group_config.each_node_rendering_context(@project) do |node_rendering_context|
           write_node_to_file(
@@ -176,7 +172,7 @@ module Hiptest
       analyze_project_data
 
       current = Hiptest::SignatureExporter.export_actionwords(@project, true)
-      diff =  Hiptest::SignatureDiffer.diff( old, current)
+      diff =  Hiptest::SignatureDiffer.diff(old, current, library_name: @cli_options.library_name)
     end
 
     def show_actionwords_diff
@@ -189,12 +185,7 @@ module Hiptest
       return if @project_data_analyzed
       reporter.with_status_message "Analyzing data" do
         @language_config = LanguageConfigParser.new(@cli_options)
-        Hiptest::Nodes::DatatableFixer.add(@project)
-        Hiptest::Nodes::ParentAdder.add(@project)
-        Hiptest::Nodes::ParameterTypeAdder.add(@project)
-        Hiptest::DefaultArgumentAdder.add(@project)
-        Hiptest::GherkinAdder.add(@project)
-        Hiptest::ItemsOrderer.add(@project, @cli_options.sort)
+        Hiptest::NodeModifiers.add_all(@project, @cli_options.sort)
       end
       @project_data_analyzed = true
     end
@@ -255,6 +246,20 @@ module Hiptest
       reporter.with_status_message "Posting #{@cli_options.push} to #{@cli_options.site}" do
         response = @client.push_results
       end
+      if valid_hiptest_api_response?(response)
+        report_imported_results(response)
+      else
+        report_hiptest_api_error(response)
+      end
+    rescue => err
+      reporter.dump_error(err)
+    end
+
+    def valid_hiptest_api_response?(response)
+      response.is_a?(Net::HTTPSuccess)
+    end
+
+    def report_imported_results(response)
       json = JSON.parse(response.body)
 
       reported_tests = json.has_key?('test_import') ? json['test_import'] : []
@@ -269,8 +274,15 @@ module Hiptest
       end
 
       display_empty_push_help if passed_count == 0
-    rescue => err
-      reporter.dump_error(err)
+    end
+
+    def report_hiptest_api_error(response)
+      reporter.failure_message("Hiptest API returned error #{response.code}")
+      if response.code == "422" && response.body.start_with?("Unknown format")
+        STDERR.print response.body.chomp + "\n"
+      elsif response.code == "404"
+        STDERR.print "Did you specify the project token of an existing Hiptest project?\n"
+      end
     end
 
     def display_empty_push_help
@@ -283,10 +295,10 @@ module Hiptest
       puts [
         "Possible causes for the lack of imported tests:",
         "",
-        "  * Did you run the following command before executing your tests ?",
+        "  * Did you run the following command before executing your tests?",
         "    #{enhanced_command}",
         "",
-        "  * Did you specify the correct push format ?",
+        "  * Did you specify the correct push format?",
         "    Use push_format=<format> in your config file or option --push-format=<format> in the command line",
         "    Available formats are: cucumber-json, junit, nunit, robot, tap",
         ""

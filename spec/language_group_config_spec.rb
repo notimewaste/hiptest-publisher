@@ -705,7 +705,8 @@ describe LanguageGroupConfig do
                                                       "[step_definitions]",
                                                       "/FeatureContext.php",
                                                       "[actionwords]",
-                                                      "/Actionwords.php"
+                                                      "/Actionwords.php",
+                                                      "[step_definitions_library]"
                                                     ],
         ["--split-scenarios"]                    => [ "[features]",
                                                       "/buy_goods.feature",
@@ -713,7 +714,8 @@ describe LanguageGroupConfig do
                                                       "[step_definitions]",
                                                       "/FeatureContext.php",
                                                       "[actionwords]",
-                                                      "/Actionwords.php"
+                                                      "/Actionwords.php",
+                                                      "[step_definitions_library]"
                                                     ],
         ["--with-folders"]                       => [ "[features]",
                                                       "/global_trades/buy_goods.feature",
@@ -721,7 +723,8 @@ describe LanguageGroupConfig do
                                                       "[step_definitions]",
                                                       "/FeatureContext.php",
                                                       "[actionwords]",
-                                                      "/Actionwords.php"
+                                                      "/Actionwords.php",
+                                                      "[step_definitions_library]"
                                                     ],
         ["--split-scenarios", "--with-folders"]  => [ "[features]",
                                                       "/global_trades/buy_goods.feature",
@@ -729,7 +732,8 @@ describe LanguageGroupConfig do
                                                       "[step_definitions]",
                                                       "/FeatureContext.php",
                                                       "[actionwords]",
-                                                      "/Actionwords.php"
+                                                      "/Actionwords.php",
+                                                      "[step_definitions_library]"
                                                     ],
         ["--keep-filenames"]                      => ["[features]",
                                                       "/Buy goods.feature",
@@ -737,7 +741,8 @@ describe LanguageGroupConfig do
                                                       "[step_definitions]",
                                                       "/FeatureContext.php",
                                                       "[actionwords]",
-                                                      "/Actionwords.php"
+                                                      "/Actionwords.php",
+                                                      "[step_definitions_library]"
                                                     ],
         ["--with-folders", "--keep-foldernames"]  => ["[features]",
                                                       "/Global trades/buy_goods.feature",
@@ -745,7 +750,8 @@ describe LanguageGroupConfig do
                                                       "[step_definitions]",
                                                       "/FeatureContext.php",
                                                       "[actionwords]",
-                                                      "/Actionwords.php"
+                                                      "/Actionwords.php",
+                                                      "[step_definitions_library]"
                                                     ],
         ["--with-folders", "--keep-filenames", "--keep-foldernames"]  => [
                                                       "[features]",
@@ -754,7 +760,8 @@ describe LanguageGroupConfig do
                                                       "[step_definitions]",
                                                       "/FeatureContext.php",
                                                       "[actionwords]",
-                                                      "/Actionwords.php"
+                                                      "/Actionwords.php",
+                                                      "[step_definitions_library]"
                                                     ]
       },
       "cucumber-javascript" => {
@@ -870,7 +877,71 @@ describe LanguageGroupConfig do
                                                       "[actionwords]",
                                                       "/Actionwords.java"
                                                     ]
-      }
+      },
+      "cucumber-groovy" => {
+        []                                       => [ "[features]",
+                                                      "/BuyGoods.feature",
+                                                      "/SellGoods.feature",
+                                                      "[step_definitions]",
+                                                      "/StepDefinitions.groovy",
+                                                      "[step_definitions_library]",
+                                                      "[actionwords]", "/Actionwords.groovy"
+                                                    ],
+        ["--split-scenarios"]                    => [ "[features]",
+                                                      "/BuyGoods.feature",
+                                                      "/SellGoods.feature",
+                                                      "[step_definitions]",
+                                                      "/StepDefinitions.groovy",
+                                                      "[step_definitions_library]",
+                                                      "[actionwords]",
+                                                      "/Actionwords.groovy"
+                                                    ],
+        ["--with-folders"]                       => [ "[features]",
+                                                      "/global_trades/BuyGoods.feature",
+                                                      "/global_trades/SellGoods.feature",
+                                                      "[step_definitions]",
+                                                      "/StepDefinitions.groovy",
+                                                      "[step_definitions_library]",
+                                                      "[actionwords]",
+                                                      "/Actionwords.groovy"
+                                                    ],
+        ["--split-scenarios", "--with-folders"]  => [ "[features]",
+                                                      "/global_trades/BuyGoods.feature",
+                                                      "/global_trades/SellGoods.feature",
+                                                      "[step_definitions]",
+                                                      "/StepDefinitions.groovy",
+                                                      "[step_definitions_library]",
+                                                      "[actionwords]", "/Actionwords.groovy"
+                                                    ],
+        ["--keep-filenames"]                      => ["[features]",
+                                                      "/Buy goods.feature",
+                                                      "/Sell goods.feature",
+                                                      "[step_definitions]",
+                                                      "/StepDefinitions.groovy",
+                                                      "[step_definitions_library]",
+                                                      "[actionwords]",
+                                                      "/Actionwords.groovy"
+                                                    ],
+        ["--with-folders", "--keep-foldernames"]  => ["[features]",
+                                                      "/Global trades/BuyGoods.feature",
+                                                      "/Global trades/SellGoods.feature",
+                                                      "[step_definitions]",
+                                                      "/StepDefinitions.groovy",
+                                                      "[step_definitions_library]",
+                                                      "[actionwords]",
+                                                      "/Actionwords.groovy"
+                                                    ],
+        ["--with-folders", "--keep-filenames", "--keep-foldernames"]  => [
+                                                      "[features]",
+                                                      "/Global trades/Buy goods.feature",
+                                                      "/Global trades/Sell goods.feature",
+                                                      "[step_definitions]",
+                                                      "/StepDefinitions.groovy",
+                                                      "[step_definitions_library]",
+                                                      "[actionwords]",
+                                                      "/Actionwords.groovy"
+                                                    ]
+      },
     }.each do |dialect, output_files_for_options|
       context dialect do
         output_files_for_options.each do |options, output_files|
@@ -885,6 +956,8 @@ describe LanguageGroupConfig do
             language_config = LanguageConfigParser.new(cli_options)
             filenames = []
             language_config.language_group_configs.each do |language_group_config|
+              next if ['library', 'libraries'].include?(language_group_config[:group_name])
+
               filenames << "[#{language_group_config[:group_name]}]"
               filenames << language_group_config.each_node_rendering_context(project).map(&:path)
             end
